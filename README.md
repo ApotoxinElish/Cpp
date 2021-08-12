@@ -1,2 +1,2 @@
-# Cpp
+# C++
 This is a description.
