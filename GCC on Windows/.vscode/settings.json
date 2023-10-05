@@ -1,6 +1,3 @@
 {
-    "files.associations": {
-        "vector": "cpp",
-        "unordered_map": "cpp"
-    }
+  "editor.formatOnSave": true
 }
