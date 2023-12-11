@@ -1,9 +1,12 @@
 // g++ Q1.cpp -o Q1 -std=c++17 -O3 -Wall && ./Q1
 
+#include "npy.hpp"
 #include <sys/time.h>
 #include <iostream>
 #include <cstring>
 #include <cassert>
+
+using namespace std;
 
 double get_time()
 {

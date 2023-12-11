@@ -6,6 +6,7 @@
     "bitset": "cpp",
     "algorithm": "cpp",
     "format": "cpp",
-    "array": "cpp"
+    "array": "cpp",
+    "iostream": "cpp"
   }
 }
