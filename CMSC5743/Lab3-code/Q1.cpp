@@ -5,6 +5,9 @@
 #include <iostream>
 #include <cstring>
 #include <cassert>
+// #include <vector>
+// #include <fstream>
+// #include <sstream>
 
 using namespace std;
 
@@ -15,31 +18,51 @@ double get_time()
   return tv.tv_sec + 1e-6 * tv.tv_usec;
 }
 
-constexpr int batch = 1, // batch size (b)
-    height_feature = 56, // input height (ih)
-    width_feature = 56,  // input width (iw)
-    in_channels = 3,     // input channels (ic)
-    out_channels = 64,   // output channels (oc)
-    kernel_size = 3,     // kernel size (k1, k2)
-    stride = 1,          // stride
-    padding = 0,         // padding
+string fname = "pointcloud.csv";
+constexpr int batch = 1,  // batch size (b)
+    height_feature = 64,  // input height (ih)
+    width_feature = 4096, // input width (iw)
+    in_channels = 1,      // input channels (ic)
+    out_channels = 256,   // output channels (oc)
+    kernel_size = 3,      // kernel size (k1, k2)
+    stride = 1,           // stride
+    padding = 0,          // padding
 
     height_out = (height_feature - kernel_size + 2 * padding) / stride + 1, // output height (oh)
     width_out = (width_feature - kernel_size + 2 * padding) / stride + 1;   // output width (ow)
 
-int Input[batch][in_channels][height_feature][width_feature];
-int Input_padding[batch][in_channels][height_feature + 2 * padding][width_feature + 2 * padding];
+double Input[batch][in_channels][height_feature][width_feature];
+double Input_padding[batch][in_channels][height_feature + 2 * padding][width_feature + 2 * padding];
 int Kernel[out_channels][in_channels][kernel_size][kernel_size];
 double Output[batch][out_channels][height_out][width_out];
 double Output_groundtruth[batch][out_channels][height_out][width_out];
 
 void init()
 {
+  const string path{"pointcloud.npy"};
+  npy::npy_data d = npy::read_npy<double>(path);
+  vector<double> data = d.data;
+
+  // vector<vector<string>> content;
+  // vector<string> row;
+  // string line, word;
+  // fstream file(fname, ios::in);
+  // while (getline(file, line))
+  // {
+  //   row.clear();
+  //   stringstream str(line);
+  //   while (getline(str, word, ','))
+  //     row.push_back(word);
+  //   content.push_back(row);
+  // }
+  // file.close();
+
   for (int b = 0; b < batch; b++)
     for (int ic = 0; ic < in_channels; ic++)
       for (int ih = 0; ih < height_feature; ih++)
         for (int iw = 0; iw < width_feature; iw++)
-          Input[b][ic][ih][iw] = rand();
+          Input[b][ic][ih][iw] = data[ih * width_feature + iw]; // stod(content[ih][iw]);
+
   for (int b = 0; b < batch; b++)
     for (int ic = 0; ic < in_channels; ic++)
       for (int ih = 0; ih < height_feature; ih++)
@@ -71,53 +94,6 @@ void test()
       for (int oh = 0; oh < height_out; oh++)
         for (int ow = 0; ow < width_out; ow++)
           assert(Output[b][oc][oh][ow] == Output_groundtruth[b][oc][oh][ow]);
-}
-
-int Input_col[batch][height_out * width_out][kernel_size * kernel_size * in_channels];
-int Kernel_col[out_channels][kernel_size * kernel_size * in_channels];
-int Output_col[batch][out_channels][height_out * width_out];
-
-void im2col()
-{
-  for (int b = 0; b < batch; b++)
-    for (int oh = 0; oh < height_out; oh++)
-      for (int ow = 0; ow < width_out; ow++)
-      {
-        for (int ic = 0; ic < in_channels; ic++)
-          for (int k1 = 0; k1 < kernel_size; k1++)
-            for (int k2 = 0; k2 < kernel_size; k2++)
-              Input_col[b][oh * width_out + ow][ic * kernel_size * kernel_size + k1 * kernel_size + k2] =
-                  Input_padding[b][ic][oh * stride + k1][ow * stride + k2];
-      }
-
-  for (int oc = 0; oc < out_channels; oc++)
-    for (int ic = 0; ic < in_channels; ic++)
-      for (int k1 = 0; k1 < kernel_size; k1++)
-        for (int k2 = 0; k2 < kernel_size; k2++)
-          Kernel_col[oc][ic * kernel_size * kernel_size + k1 * kernel_size + k2] = Kernel[oc][ic][k1][k2];
-}
-
-void col2im()
-{
-  for (int b = 0; b < batch; b++)
-    for (int oc = 0; oc < out_channels; oc++)
-      for (int oh = 0; oh < height_out; oh++)
-        for (int ow = 0; ow < width_out; ow++)
-          Output[b][oc][oh][ow] = Output_col[b][oc][oh * width_out + ow];
-}
-
-void matmul_im2col()
-{
-  memset(Output, 0, sizeof(Output));
-  memset(Output_col, 0, sizeof(Output_col));
-
-  im2col();
-  for (int b = 0; b < batch; b++)
-    for (int oc = 0; oc < out_channels; oc++)
-      for (int ch = 0; ch < height_out * width_out; ch++)                    // col height (ch)
-        for (int cw = 0; cw < kernel_size * kernel_size * in_channels; cw++) // col width (cw)
-          Output_col[b][oc][ch] += Input_col[b][ch][cw] * Kernel_col[oc][cw];
-  col2im();
 }
 
 constexpr int m = 2, r = 3,
