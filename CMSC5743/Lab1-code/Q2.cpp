@@ -13,13 +13,13 @@ double get_time()
 }
 
 constexpr int N = 1, // batch
-    H = 56,          // height_feature
-    W = 56,          // width_feature
-    C = 3,           // in_channels
-    F = 64,          // out_channels
+    H = 64,          // height_feature
+    W = 64 * 64,     // width_feature
+    C = 1,           // in_channels
+    F = 512,         // out_channels
     K = 3,           // kernel_size
     S = 1,           // stride
-    P = 1,           // padding
+    P = 0,           // padding
 
     H_R = 1 + (H + 2 * P - K) / S, // output height
     W_R = 1 + (W + 2 * P - K) / S; // output width
@@ -135,8 +135,8 @@ int main()
   for (int K = 0; K < 32; K++)
   {
     auto t = get_time();
-    // stand_conv();
-    im2col_conv();
+    stand_conv();
+    // im2col_conv();
     test();
     printf("%f\n", get_time() - t);
     avg_time += get_time() - t;

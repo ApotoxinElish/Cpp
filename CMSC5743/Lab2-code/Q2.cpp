@@ -12,14 +12,14 @@ double get_time()
   return tv.tv_sec + 1e-6 * tv.tv_usec;
 }
 
-constexpr int batch = 1, // batch size (b)
-    height_feature = 56, // input height (ih)
-    width_feature = 56,  // input width (iw)
-    in_channels = 3,     // input channels (ic)
-    out_channels = 64,   // output channels (oc)
-    kernel_size = 3,     // kernel size (k1, k2)
-    stride = 1,          // stride
-    padding = 0,         // padding
+constexpr int batch = 1,     // batch size (b)
+    height_feature = 64,     // input height (ih)
+    width_feature = 64 * 64, // input width (iw)
+    in_channels = 1,         // input channels (ic)
+    out_channels = 512,      // output channels (oc)
+    kernel_size = 3,         // kernel size (k1, k2)
+    stride = 1,              // stride
+    padding = 0,             // padding
 
     height_out = (height_feature - kernel_size + 2 * padding) / stride + 1, // output height (oh)
     width_out = (width_feature - kernel_size + 2 * padding) / stride + 1;   // output width (ow)

@@ -5,9 +5,6 @@
 #include <iostream>
 #include <cstring>
 #include <cassert>
-// #include <vector>
-// #include <fstream>
-// #include <sstream>
 
 using namespace std;
 
@@ -18,12 +15,12 @@ double get_time()
   return tv.tv_sec + 1e-6 * tv.tv_usec;
 }
 
-string fname = "pointcloud.csv";
+string fname = "pointcloud.npy";
 constexpr int batch = 1,  // batch size (b)
     height_feature = 64,  // input height (ih)
     width_feature = 4096, // input width (iw)
     in_channels = 1,      // input channels (ic)
-    out_channels = 256,   // output channels (oc)
+    out_channels = 64,    // output channels (oc)
     kernel_size = 3,      // kernel size (k1, k2)
     stride = 1,           // stride
     padding = 0,          // padding
@@ -31,37 +28,23 @@ constexpr int batch = 1,  // batch size (b)
     height_out = (height_feature - kernel_size + 2 * padding) / stride + 1, // output height (oh)
     width_out = (width_feature - kernel_size + 2 * padding) / stride + 1;   // output width (ow)
 
-double Input[batch][in_channels][height_feature][width_feature];
-double Input_padding[batch][in_channels][height_feature + 2 * padding][width_feature + 2 * padding];
+int Input[batch][in_channels][height_feature][width_feature];
+int Input_padding[batch][in_channels][height_feature + 2 * padding][width_feature + 2 * padding];
 int Kernel[out_channels][in_channels][kernel_size][kernel_size];
 double Output[batch][out_channels][height_out][width_out];
-double Output_groundtruth[batch][out_channels][height_out][width_out];
+int Output_groundtruth[batch][out_channels][height_out][width_out];
 
 void init()
 {
-  const string path{"pointcloud.npy"};
+  const string path{fname};
   npy::npy_data d = npy::read_npy<double>(path);
   vector<double> data = d.data;
-
-  // vector<vector<string>> content;
-  // vector<string> row;
-  // string line, word;
-  // fstream file(fname, ios::in);
-  // while (getline(file, line))
-  // {
-  //   row.clear();
-  //   stringstream str(line);
-  //   while (getline(str, word, ','))
-  //     row.push_back(word);
-  //   content.push_back(row);
-  // }
-  // file.close();
 
   for (int b = 0; b < batch; b++)
     for (int ic = 0; ic < in_channels; ic++)
       for (int ih = 0; ih < height_feature; ih++)
         for (int iw = 0; iw < width_feature; iw++)
-          Input[b][ic][ih][iw] = data[ih * width_feature + iw]; // stod(content[ih][iw]);
+          Input[b][ic][ih][iw] = data[ih * width_feature + iw];
 
   for (int b = 0; b < batch; b++)
     for (int ic = 0; ic < in_channels; ic++)
@@ -83,7 +66,9 @@ void init()
           for (int ic = 0; ic < in_channels; ic++)
             for (int k1 = 0; k1 < kernel_size; k1++)
               for (int k2 = 0; k2 < kernel_size; k2++)
-                Output_groundtruth[b][oc][oh][ow] += Input_padding[b][ic][oh * stride + k1][ow * stride + k2] * Kernel[oc][ic][k1][k2];
+                Output_groundtruth[b][oc][oh][ow] +=
+                    Input_padding[b][ic][oh * stride + k1][ow * stride + k2] *
+                    Kernel[oc][ic][k1][k2];
         }
 }
 
@@ -185,7 +170,6 @@ int main()
   for (int K = 0; K < 32; K++)
   {
     auto t = get_time();
-    // matmul_im2col();
     matmul_Winograd();
     test();
     printf("%f\n", get_time() - t);
